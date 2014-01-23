@@ -1,0 +1,92 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>at.ac.ait.ubicity</groupId>
+  <artifactId>ubicity-twitterplugin</artifactId>
+  <version>0.2.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>ubicity-twitterplugin</name>
+  
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  
+  <build>
+      <plugins>
+          <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>at.ac.ait.ubicity.twitterplugin.impl.StreamerImpl</mainClass>
+          <commandlineArgs></commandlineArgs>
+          <systemProperties>
+            <systemProperty>
+              <key>-Xms</key>
+              <value>1250m</value>
+            </systemProperty>
+            <systemProperty>
+                <key>-Xmx</key>
+                <value>1500m</value>
+            </systemProperty>
+          </systemProperties>
+        </configuration>
+      </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.0.2</version>
+            <configuration>
+               <source>1.7</source>
+               <target>1.7</target>
+            </configuration>
+         </plugin>
+      </plugins>
+  </build>
+
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.twitter4j</groupId>
+      <artifactId>twitter4j-core</artifactId>
+      <version>3.0.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.twitter4j</groupId>
+      <artifactId>twitter4j-stream</artifactId>
+      <version>3.0.3</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-configuration</groupId>
+      <artifactId>commons-configuration</artifactId>
+      <version>1.9</version>
+    </dependency>
+    <dependency>
+      <groupId>at.ac.ait</groupId>
+      <artifactId>ubicity-json</artifactId>
+      <version>0.2.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>at.ac.ait</groupId>
+      <artifactId>ubicity-core</artifactId>
+      <version>0.2.1-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+</project>
+
