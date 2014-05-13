@@ -18,7 +18,6 @@ package at.ac.ait.ubicity.twitterplugin.impl;
  along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
 
  */
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
@@ -60,6 +59,8 @@ public class StreamerImpl implements Streamer {
 
 	protected TwitterStream twitterStream = null;
 
+	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
+
 	private final JSONObject[] bulkArray = new JSONObject[100];
 
 	protected boolean coreDemandedStop = false;
@@ -74,25 +75,33 @@ public class StreamerImpl implements Streamer {
 
 	// cache the Core instance, in order to spare us many thousands ( or
 	// millions ) of calls to Core#getInstance()
-	Core core;
-
-	private static Configuration config;
+	private final Core core;
 
 	private final static Logger logger = Logger.getLogger(StreamerImpl.class
 			.getName());
 
-	static {
-		logger.setLevel(Level.ALL);
+	public StreamerImpl() {
+
 		try {
-			config = new PropertiesConfiguration("twitter.cfg");
+			Configuration config = new PropertiesConfiguration(
+					StreamerImpl.class.getResource("/twitter.cfg"));
+
+			configBuilder.setOAuthConsumerKey(config
+					.getString("plugin.twitter.oauth_consumer_key"));
+			configBuilder.setOAuthConsumerSecret(config
+					.getString("plugin.twitter.oauth_consumer_secret"));
+			configBuilder.setOAuthAccessToken(config
+					.getString("plugin.twitter.oauth_access_token"));
+			configBuilder.setOAuthAccessTokenSecret(config
+					.getString("plugin.twitter.oauth_access_token_secret"));
+			configBuilder.setJSONStoreEnabled(true);
+			configBuilder.setJSONStoreEnabled(true);
+
 		} catch (ConfigurationException noConfig) {
 			logger.severe(StreamerImpl.class.getName()
-					+ " :: found no config, file plugin.cfg not found or other configuration problem");
+					+ " :: found no config, file twitter.cfg not found or other configuration problem");
 		}
 
-	}
-
-	public StreamerImpl() {
 		instanceCount++;
 		cachedHash = doHash(instanceCount);
 		core = Core.getInstance();
@@ -111,7 +120,6 @@ public class StreamerImpl implements Streamer {
 		twitterStream.shutdown();
 		// a rather brute-ish way to go about stopping...
 		Thread.currentThread().stop();
-
 	}
 
 	@Override
@@ -121,20 +129,8 @@ public class StreamerImpl implements Streamer {
 
 	@Override
 	public void run() {
-
-		ConfigurationBuilder cb = new ConfigurationBuilder();
-		cb.setOAuthConsumerKey(config
-				.getString("plugin.twitter.oauth_consumer_key"));
-		cb.setOAuthConsumerSecret(config
-				.getString("plugin.twitter.oauth_consumer_secret"));
-		cb.setOAuthAccessToken(config
-				.getString("plugin.twitter.oauth_access_token"));
-		cb.setOAuthAccessTokenSecret(config
-				.getString("plugin.twitter.oauth_access_token_secret"));
-		cb.setJSONStoreEnabled(true);
-		cb.setJSONStoreEnabled(true);
-
-		twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
+		twitterStream = new TwitterStreamFactory(configBuilder.build())
+				.getInstance();
 		twitterStream.addListener(this);
 		double[][] locations = { { -179.9999, -89.9999 }, { 179.9999, 89.9999 } };
 
@@ -161,9 +157,10 @@ public class StreamerImpl implements Streamer {
 					__hash = null;
 				}
 			}
-			System.out.println("[ TRACE ] [ " + msgsRetrieved + " ]  @"
-					+ __user + " : " + (__hash != null ? ("#" + __hash) : "")
-					+ " : " + __text);
+
+			logger.finest("[ " + msgsRetrieved + " ]  @" + __user + " : "
+					+ (__hash != null ? ("#" + __hash) : "") + " : " + __text);
+
 			String rawJSON = DataObjectFactory.getRawJSON(status);
 			bulkArray[_tweetIndex] = new JSONObject(rawJSON);
 			if (_tweetIndex == 99) {
@@ -171,13 +168,8 @@ public class StreamerImpl implements Streamer {
 				_start = System.nanoTime();
 				core.offerBulk(bulkArray, context);
 				_lapse = System.nanoTime() - _start;
-				System.out.println(_lapse);
 			}
 			msgsRetrieved++;
-			// String __text = status.getText();
-			// String __author = status.getUser().getName();
-			// System.out.println( "[ TRACE ] [ " + msgsRetrieved + " ]   @" +
-			// __author + "  " + __text );
 		}
 	}
 
@@ -231,7 +223,7 @@ public class StreamerImpl implements Streamer {
 	}
 
 	public final static void main(String... args) {
-		StreamerImpl streamer = new StreamerImpl();
+		new StreamerImpl();
 	}
 
 	@Override
