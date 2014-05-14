@@ -32,10 +32,10 @@ import twitter4j.HashtagEntity;
 import twitter4j.StallWarning;
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
+import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.conf.ConfigurationBuilder;
-import twitter4j.json.DataObjectFactory;
 import at.ac.ait.ubicity.commons.PluginContext;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
 import at.ac.ait.ubicity.core.Core;
@@ -73,6 +73,8 @@ public class StreamerImpl implements Streamer {
 
 	private PluginContext context;
 
+	private final FilterQuery filterQuery = new FilterQuery();
+
 	// cache the Core instance, in order to spare us many thousands ( or
 	// millions ) of calls to Core#getInstance()
 	private final Core core;
@@ -86,16 +88,8 @@ public class StreamerImpl implements Streamer {
 			Configuration config = new PropertiesConfiguration(
 					StreamerImpl.class.getResource("/twitter.cfg"));
 
-			configBuilder.setOAuthConsumerKey(config
-					.getString("plugin.twitter.oauth_consumer_key"));
-			configBuilder.setOAuthConsumerSecret(config
-					.getString("plugin.twitter.oauth_consumer_secret"));
-			configBuilder.setOAuthAccessToken(config
-					.getString("plugin.twitter.oauth_access_token"));
-			configBuilder.setOAuthAccessTokenSecret(config
-					.getString("plugin.twitter.oauth_access_token_secret"));
-			configBuilder.setJSONStoreEnabled(true);
-			configBuilder.setJSONStoreEnabled(true);
+			setOAuthSettings(config);
+			setFilterSettings(config);
 
 		} catch (ConfigurationException noConfig) {
 			logger.severe(StreamerImpl.class.getName()
@@ -111,6 +105,59 @@ public class StreamerImpl implements Streamer {
 		t.setName("execution context for " + NAME);
 		t.start();
 
+	}
+
+	/**
+	 * Sets the OAuth credentials for twitter access
+	 * 
+	 * @param config
+	 */
+	private void setOAuthSettings(Configuration config) {
+		configBuilder.setOAuthConsumerKey(config
+				.getString("plugin.twitter.oauth_consumer_key"));
+		configBuilder.setOAuthConsumerSecret(config
+				.getString("plugin.twitter.oauth_consumer_secret"));
+		configBuilder.setOAuthAccessToken(config
+				.getString("plugin.twitter.oauth_access_token"));
+		configBuilder.setOAuthAccessTokenSecret(config
+				.getString("plugin.twitter.oauth_access_token_secret"));
+		configBuilder.setJSONStoreEnabled(true);
+		configBuilder.setJSONStoreEnabled(true);
+	}
+
+	/**
+	 * Sets the Filter settings for the Query.
+	 * 
+	 * @param config
+	 */
+	private void setFilterSettings(Configuration config) {
+		String[] minCoordinate = config
+				.getStringArray("plugin.twitter.filter.coord_min");
+		String[] maxCoordinate = config
+				.getStringArray("plugin.twitter.filter.coord_max");
+
+		String[] track = config.getStringArray("plugin.twitter.filter.track");
+		String[] language = config
+				.getStringArray("plugin.twitter.filter.language");
+
+		if (minCoordinate.length == 2 && maxCoordinate.length == 2) {
+			double[][] locations = {
+					{ Double.parseDouble(minCoordinate[0]),
+							Double.parseDouble(minCoordinate[1]) },
+					{ Double.parseDouble(maxCoordinate[0]),
+							Double.parseDouble(maxCoordinate[1]) } };
+			filterQuery.locations(locations);
+		} else {
+			logger.info("Location filter ignored due to non existing coordinates.");
+		}
+
+		if (track[0].length() != 0) {
+			filterQuery.track(track);
+		}
+
+		if (language[0].length() != 0) {
+			filterQuery.language(language);
+		}
 	}
 
 	@Override
@@ -132,12 +179,7 @@ public class StreamerImpl implements Streamer {
 		twitterStream = new TwitterStreamFactory(configBuilder.build())
 				.getInstance();
 		twitterStream.addListener(this);
-		double[][] locations = { { -179.9999, -89.9999 }, { 179.9999, 89.9999 } };
-
-		FilterQuery query = new FilterQuery();
-		query.locations(locations);
-		twitterStream.filter(query);
-
+		twitterStream.filter(filterQuery);
 	}
 
 	@Override
@@ -145,7 +187,7 @@ public class StreamerImpl implements Streamer {
 
 		int _tweetIndex = msgsRetrieved % 100;
 
-		if (!(status.getGeoLocation() == null)) {
+		if (status.getGeoLocation() != null) {
 			String __text = status.getText();
 			String __user = status.getUser().getName();
 			HashtagEntity[] __hashTags = status.getHashtagEntities();
@@ -158,16 +200,13 @@ public class StreamerImpl implements Streamer {
 				}
 			}
 
-			logger.finest("[ " + msgsRetrieved + " ]  @" + __user + " : "
+			logger.fine("[ " + msgsRetrieved + " ]  @" + __user + " : "
 					+ (__hash != null ? ("#" + __hash) : "") + " : " + __text);
 
-			String rawJSON = DataObjectFactory.getRawJSON(status);
+			String rawJSON = TwitterObjectFactory.getRawJSON(status);
 			bulkArray[_tweetIndex] = new JSONObject(rawJSON);
 			if (_tweetIndex == 99) {
-				long _start, _lapse;
-				_start = System.nanoTime();
 				core.offerBulk(bulkArray, context);
-				_lapse = System.nanoTime() - _start;
 			}
 			msgsRetrieved++;
 		}
