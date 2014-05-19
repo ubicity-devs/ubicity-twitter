@@ -18,6 +18,7 @@ package at.ac.ait.ubicity.twitterplugin.impl;
  along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
 
  */
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
@@ -36,8 +37,8 @@ import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.conf.ConfigurationBuilder;
-import at.ac.ait.ubicity.commons.PluginContext;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
+import at.ac.ait.ubicity.commons.plugin.PluginContext;
 import at.ac.ait.ubicity.core.Core;
 import at.ac.ait.ubicity.twitterplugin.Streamer;
 
@@ -60,12 +61,11 @@ public class StreamerImpl implements Streamer {
 	protected TwitterStream twitterStream = null;
 
 	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
+	private final HashMap<PluginConfig, String> pluginConfig = new HashMap<PluginConfig, String>();
 
 	private final JSONObject[] bulkArray = new JSONObject[100];
 
 	protected boolean coreDemandedStop = false;
-
-	public final static String NAME = "twitter streamer plugin for ubicity";
 
 	private final int cachedHash;
 
@@ -88,6 +88,7 @@ public class StreamerImpl implements Streamer {
 			Configuration config = new PropertiesConfiguration(
 					StreamerImpl.class.getResource("/twitter.cfg"));
 
+			setPluginConfig(config);
 			setOAuthSettings(config);
 			setFilterSettings(config);
 
@@ -100,9 +101,9 @@ public class StreamerImpl implements Streamer {
 		cachedHash = doHash(instanceCount);
 		core = Core.getInstance();
 		core.register(this);
-		logger.info(NAME + " registered with ubicity core ");
+		logger.info(getName() + " registered with ubicity core ");
 		Thread t = new Thread(this);
-		t.setName("execution context for " + NAME);
+		t.setName("execution context for " + getName());
 		t.start();
 
 	}
@@ -122,7 +123,22 @@ public class StreamerImpl implements Streamer {
 		configBuilder.setOAuthAccessTokenSecret(config
 				.getString("plugin.twitter.oauth_access_token_secret"));
 		configBuilder.setJSONStoreEnabled(true);
-		configBuilder.setJSONStoreEnabled(true);
+	}
+
+	/**
+	 * Sets the Plugin configuration.
+	 * 
+	 * @param config
+	 */
+	private void setPluginConfig(Configuration config) {
+		pluginConfig.put(PluginConfig.PLUGIN_NAME,
+				config.getString("twitter streamer plugin for ubicity"));
+
+		pluginConfig.put(PluginConfig.ES_INDEX,
+				config.getString("plugin.twitter.elasticsearch.index"));
+
+		pluginConfig.put(PluginConfig.ES_TYPE,
+				config.getString("plugin.twitter.elasticsearch.type"));
 	}
 
 	/**
@@ -171,7 +187,7 @@ public class StreamerImpl implements Streamer {
 
 	@Override
 	public String getName() {
-		return NAME;
+		return pluginConfig.get(PluginConfig.PLUGIN_NAME);
 	}
 
 	@Override
@@ -200,11 +216,9 @@ public class StreamerImpl implements Streamer {
 				}
 			}
 
-			logger.fine("[ " + msgsRetrieved + " ]  @" + __user + " : "
-					+ (__hash != null ? ("#" + __hash) : "") + " : " + __text);
-
 			String rawJSON = TwitterObjectFactory.getRawJSON(status);
 			bulkArray[_tweetIndex] = new JSONObject(rawJSON);
+			// bulkArray[_tweetIndex] = new JSONObject(new GeoTweet(status));
 			if (_tweetIndex == 99) {
 				core.offerBulk(bulkArray, context);
 			}
@@ -225,8 +239,7 @@ public class StreamerImpl implements Streamer {
 
 	@Override
 	public void onException(Exception ex) {
-		logger.severe("got an unspecified exception : " + ex.toString());
-		ex.printStackTrace();
+		logger.severe("got an unspecified exception : " + ex);
 	}
 
 	@Override
@@ -258,7 +271,7 @@ public class StreamerImpl implements Streamer {
 
 	private final int doHash(int _instanceCount) {
 		return (new StringBuilder().append(_instanceCount).append(" :: ")
-				.append(NAME)).toString().hashCode();
+				.append(getName())).toString().hashCode();
 	}
 
 	public final static void main(String... args) {
@@ -273,5 +286,10 @@ public class StreamerImpl implements Streamer {
 	@Override
 	public PluginContext getContext() {
 		return context;
+	}
+
+	@Override
+	public String getConfigEntry(PluginConfig cfg) {
+		return pluginConfig.get(cfg);
 	}
 }
