@@ -19,17 +19,17 @@ package at.ac.ait.ubicity.twitterplugin.impl;
 
  */
 import java.util.HashMap;
-import java.util.logging.Logger;
+import java.util.Random;
+import java.util.UUID;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.json.JSONObject;
+import org.apache.log4j.Logger;
 
 import twitter4j.FilterQuery;
-import twitter4j.HashtagEntity;
 import twitter4j.StallWarning;
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
@@ -37,70 +37,52 @@ import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.conf.ConfigurationBuilder;
-import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
-import at.ac.ait.ubicity.commons.plugin.PluginContext;
+import at.ac.ait.ubicity.commons.broker.events.ESMetadata;
+import at.ac.ait.ubicity.commons.broker.events.ESMetadata.Action;
+import at.ac.ait.ubicity.commons.broker.events.ESMetadata.Properties;
+import at.ac.ait.ubicity.commons.broker.events.EventEntry;
+import at.ac.ait.ubicity.commons.broker.events.Metadata;
 import at.ac.ait.ubicity.core.Core;
-import at.ac.ait.ubicity.twitterplugin.Streamer;
+import at.ac.ait.ubicity.core.UbicityBrokerException;
+import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
 
 @PluginImplementation
-public class StreamerImpl implements Streamer {
+public class TwitterStreamerImpl implements TwitterStreamer {
 
-	/**
-	 * 
-	 * @author Hermann Huber for the original implementation as a stand-alone
-	 *         app
-	 * @author Jan van Oort for optimizations & port to a ubicity plugin
-	 *         structure
-	 * @version 0.1
-	 * @see UbicityPlugin
-	 *
-	 */
-
-	protected static int msgsRetrieved = 0;
-
-	protected TwitterStream twitterStream = null;
+	private final int uniqueId;
 
 	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
-	private final HashMap<PluginConfig, String> pluginConfig = new HashMap<PluginConfig, String>();
-
-	private final JSONObject[] bulkArray = new JSONObject[100];
-
-	protected boolean coreDemandedStop = false;
-
-	private final int cachedHash;
-
-	public static int instanceCount = 0;
-
-	private PluginContext context;
-
+	protected TwitterStream twitterStream = null;
 	private final FilterQuery filterQuery = new FilterQuery();
 
 	// cache the Core instance, in order to spare us many thousands ( or
 	// millions ) of calls to Core#getInstance()
 	private final Core core;
 
-	private final static Logger logger = Logger.getLogger(StreamerImpl.class
-			.getName());
+	private String name;
+	private String esIndex;
+	private String esType;
 
-	public StreamerImpl() {
+	private final static Logger logger = Logger
+			.getLogger(TwitterStreamerImpl.class);
 
+	public TwitterStreamerImpl() {
+		uniqueId = new Random().nextInt();
 		try {
 			Configuration config = new PropertiesConfiguration(
-					StreamerImpl.class.getResource("/twitter.cfg"));
+					TwitterStreamerImpl.class.getResource("/twitter.cfg"));
 
 			setPluginConfig(config);
 			setOAuthSettings(config);
 			setFilterSettings(config);
 
 		} catch (ConfigurationException noConfig) {
-			logger.severe(StreamerImpl.class.getName()
-					+ " :: found no config, file twitter.cfg not found or other configuration problem");
+			logger.fatal("Configuration not found! " + noConfig.toString());
 		}
 
-		instanceCount++;
-		cachedHash = doHash(instanceCount);
 		core = Core.getInstance();
 		core.register(this);
+
 		logger.info(getName() + " registered with ubicity core ");
 		Thread t = new Thread(this);
 		t.setName("execution context for " + getName());
@@ -131,14 +113,9 @@ public class StreamerImpl implements Streamer {
 	 * @param config
 	 */
 	private void setPluginConfig(Configuration config) {
-		pluginConfig.put(PluginConfig.PLUGIN_NAME,
-				config.getString("twitter streamer plugin for ubicity"));
-
-		pluginConfig.put(PluginConfig.ES_INDEX,
-				config.getString("plugin.twitter.elasticsearch.index"));
-
-		pluginConfig.put(PluginConfig.ES_TYPE,
-				config.getString("plugin.twitter.elasticsearch.type"));
+		this.name = config.getString("plugin.twitter.name");
+		this.esIndex = config.getString("plugin.twitter.elasticsearch.index");
+		this.esType = config.getString("plugin.twitter.elasticsearch.type");
 	}
 
 	/**
@@ -177,17 +154,8 @@ public class StreamerImpl implements Streamer {
 	}
 
 	@Override
-	public void mustStop() {
-		coreDemandedStop = true;
-		twitterStream.cleanUp();
-		twitterStream.shutdown();
-		// a rather brute-ish way to go about stopping...
-		Thread.currentThread().stop();
-	}
-
-	@Override
 	public String getName() {
-		return pluginConfig.get(PluginConfig.PLUGIN_NAME);
+		return name;
 	}
 
 	@Override
@@ -201,95 +169,74 @@ public class StreamerImpl implements Streamer {
 	@Override
 	public void onStatus(Status status) {
 
-		int _tweetIndex = msgsRetrieved % 100;
-
 		if (status.getGeoLocation() != null) {
-			String __text = status.getText();
-			String __user = status.getUser().getName();
-			HashtagEntity[] __hashTags = status.getHashtagEntities();
-			String __hash = null;
-			if (__hashTags != null) {
-				try {
-					__hash = __hashTags[0].getText();
-				} catch (ArrayIndexOutOfBoundsException nothingThere) {
-					__hash = null;
-				}
+			try {
+				core.publish(createEvent(status));
+			} catch (UbicityBrokerException e) {
+				logger.error("UbicityBroker threw exc." + e.getBrokerMessage());
 			}
-
-			String rawJSON = TwitterObjectFactory.getRawJSON(status);
-			bulkArray[_tweetIndex] = new JSONObject(rawJSON);
-			// bulkArray[_tweetIndex] = new JSONObject(new GeoTweet(status));
-			if (_tweetIndex == 99) {
-				core.offerBulk(bulkArray, context);
-			}
-			msgsRetrieved++;
 		}
 	}
 
 	@Override
 	public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
-		logger.warning("Got a status deletion notice id:"
+		logger.warn("Got a status deletion notice id:"
 				+ statusDeletionNotice.getStatusId());
 	}
 
 	@Override
 	public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-		logger.warning("Got track limitation notice:" + numberOfLimitedStatuses);
+		logger.warn("Got track limitation notice:" + numberOfLimitedStatuses);
 	}
 
 	@Override
 	public void onException(Exception ex) {
-		logger.severe("got an unspecified exception : " + ex);
+		logger.error("got an unspecified exception : " + ex);
 	}
 
 	@Override
 	public void onScrubGeo(long userId, long upToStatusId) {
-		logger.warning("[ WARN ] Got scrub_geo event userId:" + userId
+		logger.warn("[ WARN ] Got scrub_geo event userId:" + userId
 				+ " upToStatusId:" + upToStatusId);
 	}
 
 	@Override
 	public void onStallWarning(StallWarning warning) {
-		logger.warning("Got a stall warnning : " + warning.toString());
+		logger.warn("Got a stall warnning : " + warning.toString());
 
 	}
 
 	@Override
 	public final int hashCode() {
-		return cachedHash;
+		return uniqueId;
 	}
 
 	@Override
 	public final boolean equals(Object o) {
-		if (o == null)
-			return false;
-		if (!(o instanceof StreamerImpl))
-			return false;
-		StreamerImpl other = (StreamerImpl) o;
-		return (other.cachedHash == this.cachedHash);
+
+		if (TwitterStreamerImpl.class.isInstance(o)) {
+			TwitterStreamerImpl other = (TwitterStreamerImpl) o;
+			return other.uniqueId == this.uniqueId;
+		}
+		return false;
 	}
 
-	private final int doHash(int _instanceCount) {
-		return (new StringBuilder().append(_instanceCount).append(" :: ")
-				.append(getName())).toString().hashCode();
-	}
+	private EventEntry createEvent(Status status) {
 
-	public final static void main(String... args) {
-		new StreamerImpl();
-	}
+		HashMap<Properties, String> props = new HashMap<ESMetadata.Properties, String>();
+		props.put(Properties.ES_INDEX, esIndex);
+		props.put(Properties.ES_TYPE, esType);
+		Metadata meta = new ESMetadata(Action.INDEX, 1, props);
 
-	@Override
-	public void setContext(PluginContext _context) {
-		context = _context;
-	}
+		String id = this.name + "-" + UUID.randomUUID().toString();
 
-	@Override
-	public PluginContext getContext() {
-		return context;
+		return new EventEntry(id, meta, TwitterObjectFactory.getRawJSON(status));
 	}
 
 	@Override
-	public String getConfigEntry(PluginConfig cfg) {
-		return pluginConfig.get(cfg);
+	public boolean shutdown() {
+		twitterStream.cleanUp();
+		twitterStream.shutdown();
+		return false;
 	}
 }

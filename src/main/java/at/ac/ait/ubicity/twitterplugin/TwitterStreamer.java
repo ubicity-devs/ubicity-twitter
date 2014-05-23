@@ -20,11 +20,9 @@ package at.ac.ait.ubicity.twitterplugin;
  */
 
 import twitter4j.StatusListener;
+import at.ac.ait.ubicity.commons.broker.BrokerProducer;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
 
-public interface Streamer extends UbicityPlugin, StatusListener {
-
-	/**
-	 * @author Jan van Oort
-	 */
+public interface TwitterStreamer extends UbicityPlugin, BrokerProducer,
+		StatusListener {
 }

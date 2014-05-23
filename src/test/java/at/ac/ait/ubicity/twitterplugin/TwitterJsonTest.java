@@ -6,6 +6,7 @@ import java.util.Date;
 
 import org.easymock.EasyMock;
 import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import twitter4j.GeoLocation;
@@ -17,6 +18,7 @@ import at.ac.ait.ubicity.twitterplugin.dto.GeoTweet;
 public class TwitterJsonTest {
 
 	@Test
+	@Ignore
 	public void testClassToJson() {
 
 		Status stat = EasyMock.createNiceMock(Status.class);
