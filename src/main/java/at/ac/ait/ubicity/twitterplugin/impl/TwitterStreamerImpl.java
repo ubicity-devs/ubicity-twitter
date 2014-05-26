@@ -24,9 +24,6 @@ import java.util.UUID;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 
 import twitter4j.FilterQuery;
@@ -42,6 +39,7 @@ import at.ac.ait.ubicity.commons.broker.events.ESMetadata.Action;
 import at.ac.ait.ubicity.commons.broker.events.ESMetadata.Properties;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.Metadata;
+import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.core.Core;
 import at.ac.ait.ubicity.core.UbicityBrokerException;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
@@ -68,18 +66,12 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 
 	public TwitterStreamerImpl() {
 		uniqueId = new Random().nextInt();
-		try {
-			Configuration config = new PropertiesConfiguration(
-					TwitterStreamerImpl.class.getResource("/twitter.cfg"));
+		PropertyLoader config = new PropertyLoader(
+				TwitterStreamerImpl.class.getResource("/twitter.cfg"));
 
-			setPluginConfig(config);
-			setOAuthSettings(config);
-			setFilterSettings(config);
-
-		} catch (ConfigurationException noConfig) {
-			logger.fatal("Configuration not found! " + noConfig.toString());
-		}
-
+		setPluginConfig(config);
+		setOAuthSettings(config);
+		setFilterSettings(config);
 		core = Core.getInstance();
 		core.register(this);
 
@@ -95,7 +87,7 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	 * 
 	 * @param config
 	 */
-	private void setOAuthSettings(Configuration config) {
+	private void setOAuthSettings(PropertyLoader config) {
 		configBuilder.setOAuthConsumerKey(config
 				.getString("plugin.twitter.oauth_consumer_key"));
 		configBuilder.setOAuthConsumerSecret(config
@@ -112,7 +104,7 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	 * 
 	 * @param config
 	 */
-	private void setPluginConfig(Configuration config) {
+	private void setPluginConfig(PropertyLoader config) {
 		this.name = config.getString("plugin.twitter.name");
 		this.esIndex = config.getString("plugin.twitter.elasticsearch.index");
 		this.esType = config.getString("plugin.twitter.elasticsearch.type");
@@ -123,7 +115,7 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	 * 
 	 * @param config
 	 */
-	private void setFilterSettings(Configuration config) {
+	private void setFilterSettings(PropertyLoader config) {
 		String[] minCoordinate = config
 				.getStringArray("plugin.twitter.filter.coord_min");
 		String[] maxCoordinate = config
