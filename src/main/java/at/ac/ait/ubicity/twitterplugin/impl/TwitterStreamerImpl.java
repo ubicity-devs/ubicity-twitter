@@ -23,6 +23,8 @@ import java.util.Random;
 import java.util.UUID;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import net.xeoh.plugins.base.annotations.events.Init;
+import net.xeoh.plugins.base.annotations.events.Shutdown;
 
 import org.apache.log4j.Logger;
 
@@ -47,7 +49,7 @@ import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
 @PluginImplementation
 public class TwitterStreamerImpl implements TwitterStreamer {
 
-	private final int uniqueId;
+	private int uniqueId;
 
 	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
 	protected TwitterStream twitterStream = null;
@@ -55,7 +57,7 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 
 	// cache the Core instance, in order to spare us many thousands ( or
 	// millions ) of calls to Core#getInstance()
-	private final Core core;
+	private Core core;
 
 	private String name;
 	private String esIndex;
@@ -64,7 +66,9 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	private final static Logger logger = Logger
 			.getLogger(TwitterStreamerImpl.class);
 
-	public TwitterStreamerImpl() {
+	@Override
+	@Init
+	public void init() {
 		uniqueId = new Random().nextInt();
 		PropertyLoader config = new PropertyLoader(
 				TwitterStreamerImpl.class.getResource("/twitter.cfg"));
@@ -226,9 +230,9 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	}
 
 	@Override
-	public boolean shutdown() {
+	@Shutdown
+	public void shutdown() {
 		twitterStream.cleanUp();
 		twitterStream.shutdown();
-		return false;
 	}
 }
