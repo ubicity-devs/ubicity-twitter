@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.Date;
 
 import org.easymock.EasyMock;
-import org.json.JSONObject;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -14,6 +13,8 @@ import twitter4j.Place;
 import twitter4j.Status;
 import twitter4j.User;
 import at.ac.ait.ubicity.twitterplugin.dto.GeoTweet;
+
+import com.google.gson.Gson;
 
 public class TwitterJsonTest {
 
@@ -43,12 +44,12 @@ public class TwitterJsonTest {
 		EasyMock.expect(stat.getPlace()).andReturn(place).anyTimes();
 		EasyMock.replay(stat);
 
-		String rawJSON = new JSONObject(new GeoTweet(stat)).toString();
+		Gson gson = new Gson();
+		String rawJSON = gson.toJson(new GeoTweet(stat));
 
 		System.out.println(rawJSON);
-		System.out.println(new Date());
 
 		assertTrue(rawJSON.contains("twittrUsr"));
-		assertTrue(rawJSON.contains("180,90"));
+		assertTrue(rawJSON.contains("180.0,90.0"));
 	}
 }

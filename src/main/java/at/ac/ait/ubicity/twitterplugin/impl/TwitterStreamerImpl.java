@@ -23,6 +23,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import net.xeoh.plugins.base.annotations.Thread;
 import net.xeoh.plugins.base.annotations.events.Init;
 import net.xeoh.plugins.base.annotations.events.Shutdown;
 
@@ -55,8 +56,6 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	protected TwitterStream twitterStream = null;
 	private final FilterQuery filterQuery = new FilterQuery();
 
-	// cache the Core instance, in order to spare us many thousands ( or
-	// millions ) of calls to Core#getInstance()
 	private Core core;
 
 	private String name;
@@ -78,12 +77,6 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 		setFilterSettings(config);
 		core = Core.getInstance();
 		core.register(this);
-
-		logger.info(getName() + " registered with ubicity core ");
-		Thread t = new Thread(this);
-		t.setName("execution context for " + getName());
-		t.start();
-
 	}
 
 	/**
@@ -154,7 +147,7 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 		return name;
 	}
 
-	@Override
+	@Thread
 	public void run() {
 		twitterStream = new TwitterStreamFactory(configBuilder.build())
 				.getInstance();
@@ -187,13 +180,13 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 
 	@Override
 	public void onException(Exception ex) {
-		logger.error("got an unspecified exception : " + ex);
+		logger.error("Got an unspecified exception : " + ex);
 	}
 
 	@Override
 	public void onScrubGeo(long userId, long upToStatusId) {
-		logger.warn("[ WARN ] Got scrub_geo event userId:" + userId
-				+ " upToStatusId:" + upToStatusId);
+		logger.warn("Got scrub_geo event userId:" + userId + " upToStatusId:"
+				+ upToStatusId);
 	}
 
 	@Override
