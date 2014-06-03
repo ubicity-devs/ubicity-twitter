@@ -19,7 +19,6 @@ package at.ac.ait.ubicity.twitterplugin.impl;
 
  */
 import java.util.HashMap;
-import java.util.Random;
 import java.util.UUID;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
@@ -54,8 +53,6 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	@InjectPlugin
 	public static UbicityBroker broker;
 
-	private int uniqueId;
-
 	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
 	protected TwitterStream twitterStream = null;
 	private final FilterQuery filterQuery = new FilterQuery();
@@ -70,7 +67,6 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	@Override
 	@Init
 	public void init() {
-		uniqueId = new Random().nextInt();
 		PropertyLoader config = new PropertyLoader(
 				TwitterStreamerImpl.class.getResource("/twitter.cfg"));
 
@@ -197,23 +193,7 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 
 	}
 
-	@Override
-	public final int hashCode() {
-		return uniqueId;
-	}
-
-	@Override
-	public final boolean equals(Object o) {
-
-		if (TwitterStreamerImpl.class.isInstance(o)) {
-			TwitterStreamerImpl other = (TwitterStreamerImpl) o;
-			return other.uniqueId == this.uniqueId;
-		}
-		return false;
-	}
-
 	private EventEntry createEvent(Status status) {
-
 		HashMap<Properties, String> props = new HashMap<ESMetadata.Properties, String>();
 		props.put(Properties.ES_INDEX, esIndex);
 		props.put(Properties.ES_TYPE, esType);
