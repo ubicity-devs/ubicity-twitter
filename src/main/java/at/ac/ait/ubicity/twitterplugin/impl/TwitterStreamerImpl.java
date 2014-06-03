@@ -26,6 +26,7 @@ import net.xeoh.plugins.base.annotations.PluginImplementation;
 import net.xeoh.plugins.base.annotations.Thread;
 import net.xeoh.plugins.base.annotations.events.Init;
 import net.xeoh.plugins.base.annotations.events.Shutdown;
+import net.xeoh.plugins.base.annotations.injections.InjectPlugin;
 
 import org.apache.log4j.Logger;
 
@@ -37,26 +38,27 @@ import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.conf.ConfigurationBuilder;
+import at.ac.ait.ubicity.commons.broker.UbicityBroker;
 import at.ac.ait.ubicity.commons.broker.events.ESMetadata;
 import at.ac.ait.ubicity.commons.broker.events.ESMetadata.Action;
 import at.ac.ait.ubicity.commons.broker.events.ESMetadata.Properties;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.Metadata;
+import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
-import at.ac.ait.ubicity.core.Core;
-import at.ac.ait.ubicity.core.UbicityBrokerException;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
 
 @PluginImplementation
 public class TwitterStreamerImpl implements TwitterStreamer {
+
+	@InjectPlugin
+	public static UbicityBroker broker;
 
 	private int uniqueId;
 
 	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
 	protected TwitterStream twitterStream = null;
 	private final FilterQuery filterQuery = new FilterQuery();
-
-	private Core core;
 
 	private String name;
 	private String esIndex;
@@ -75,8 +77,8 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 		setPluginConfig(config);
 		setOAuthSettings(config);
 		setFilterSettings(config);
-		core = Core.getInstance();
-		core.register(this);
+
+		logger.info(name + " loaded");
 	}
 
 	/**
@@ -160,7 +162,7 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 
 		if (status.getGeoLocation() != null) {
 			try {
-				core.publish(createEvent(status));
+				broker.publish(createEvent(status));
 			} catch (UbicityBrokerException e) {
 				logger.error("UbicityBroker threw exc." + e.getBrokerMessage());
 			}
