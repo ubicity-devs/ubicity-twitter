@@ -25,7 +25,6 @@ import net.xeoh.plugins.base.annotations.PluginImplementation;
 import net.xeoh.plugins.base.annotations.Thread;
 import net.xeoh.plugins.base.annotations.events.Init;
 import net.xeoh.plugins.base.annotations.events.Shutdown;
-import net.xeoh.plugins.base.annotations.injections.InjectPlugin;
 
 import org.apache.log4j.Logger;
 
@@ -37,21 +36,16 @@ import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.conf.ConfigurationBuilder;
-import at.ac.ait.ubicity.commons.broker.UbicityBroker;
-import at.ac.ait.ubicity.commons.broker.events.ESMetadata;
-import at.ac.ait.ubicity.commons.broker.events.ESMetadata.Action;
-import at.ac.ait.ubicity.commons.broker.events.ESMetadata.Properties;
+import at.ac.ait.ubicity.commons.broker.BrokerProducer;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
-import at.ac.ait.ubicity.commons.broker.events.Metadata;
+import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
 
 @PluginImplementation
-public class TwitterStreamerImpl implements TwitterStreamer {
-
-	@InjectPlugin
-	public static UbicityBroker broker;
+public class TwitterStreamerImpl extends BrokerProducer implements
+		TwitterStreamer {
 
 	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
 	protected TwitterStream twitterStream = null;
@@ -70,11 +64,27 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 		PropertyLoader config = new PropertyLoader(
 				TwitterStreamerImpl.class.getResource("/twitter.cfg"));
 
+		setProducerSettings(config);
 		setPluginConfig(config);
 		setOAuthSettings(config);
 		setFilterSettings(config);
-
 		logger.info(name + " loaded");
+	}
+
+	/**
+	 * Sets the Apollo broker settings
+	 * 
+	 * @param config
+	 */
+	private void setProducerSettings(PropertyLoader config) {
+		try {
+			super.init(config.getString("plugin.twitter.broker.user"),
+					config.getString("plugin.twitter.broker.pwd"));
+			setProducer(config.getString("plugin.twitter.broker.dest"));
+
+		} catch (UbicityBrokerException e) {
+			logger.error("During init caught exc.", e);
+		}
 	}
 
 	/**
@@ -158,7 +168,7 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 
 		if (status.getGeoLocation() != null) {
 			try {
-				broker.publish(createEvent(status));
+				publish(createEvent(status));
 			} catch (UbicityBrokerException e) {
 				logger.error("UbicityBroker threw exc." + e.getBrokerMessage());
 			}
@@ -194,14 +204,12 @@ public class TwitterStreamerImpl implements TwitterStreamer {
 	}
 
 	private EventEntry createEvent(Status status) {
-		HashMap<Properties, String> props = new HashMap<ESMetadata.Properties, String>();
-		props.put(Properties.ES_INDEX, esIndex);
-		props.put(Properties.ES_TYPE, esType);
-		Metadata meta = new ESMetadata(Action.INDEX, 1, props);
+		HashMap<Property, String> header = new HashMap<Property, String>();
+		header.put(Property.ES_INDEX, this.esIndex);
+		header.put(Property.ES_TYPE, esType);
+		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
-		String id = this.name + "-" + UUID.randomUUID().toString();
-
-		return new EventEntry(id, meta, TwitterObjectFactory.getRawJSON(status));
+		return new EventEntry(header, TwitterObjectFactory.getRawJSON(status));
 	}
 
 	@Override
