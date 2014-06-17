@@ -12,7 +12,7 @@ import twitter4j.GeoLocation;
 import twitter4j.Place;
 import twitter4j.Status;
 import twitter4j.User;
-import at.ac.ait.ubicity.twitterplugin.dto.GeoTweet;
+import at.ac.ait.ubicity.twitterplugin.dto.TwitterDTO;
 
 import com.google.gson.Gson;
 
@@ -45,7 +45,7 @@ public class TwitterJsonTest {
 		EasyMock.replay(stat);
 
 		Gson gson = new Gson();
-		String rawJSON = gson.toJson(new GeoTweet(stat));
+		String rawJSON = gson.toJson(new TwitterDTO(stat));
 
 		System.out.println(rawJSON);
 

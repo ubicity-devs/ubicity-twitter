@@ -157,10 +157,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	@Thread
 	public void run() {
-		twitterStream = new TwitterStreamFactory(configBuilder.build())
-				.getInstance();
-		twitterStream.addListener(this);
-		twitterStream.filter(filterQuery);
+		reconnect();
 	}
 
 	@Override
@@ -188,7 +185,21 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	@Override
 	public void onException(Exception ex) {
-		logger.error("Got an unspecified exception : " + ex);
+		logger.warn("Got an unspecified exception: ", ex);
+		reconnect();
+	}
+
+	public void reconnect() {
+
+		if (twitterStream != null) {
+			twitterStream.clearListeners();
+			twitterStream.cleanUp();
+		}
+
+		twitterStream = new TwitterStreamFactory(configBuilder.build())
+				.getInstance();
+		twitterStream.addListener(this);
+		twitterStream.filter(filterQuery);
 	}
 
 	@Override

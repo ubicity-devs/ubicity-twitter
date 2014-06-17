@@ -16,7 +16,7 @@ import twitter4j.Status;
  * @author ruggenthalerc
  *
  */
-public class GeoTweet {
+public class TwitterDTO {
 
 	private static SimpleDateFormat df = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -103,7 +103,7 @@ public class GeoTweet {
 	private final Place place;
 	private final Msg msg;
 
-	public GeoTweet(Status status) {
+	public TwitterDTO(Status status) {
 
 		this.tweetId = String.valueOf(status.getId());
 		this.createdAt = df.format(status.getCreatedAt());
