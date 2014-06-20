@@ -8,23 +8,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.apache.lucene.search.highlight.SimpleHTMLEncoder;
+
 import twitter4j.GeoLocation;
 import twitter4j.HashtagEntity;
 import twitter4j.Status;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * @author ruggenthalerc
  *
  */
 public class TwitterDTO {
+	private static Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
 	private static SimpleDateFormat df = new SimpleDateFormat(
-			"yyyy-MM-dd'T'HH:mm:ss'Z'");
+			"yyyy-MM-dd'T'HH:mm:ssZZ");
 	{
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
+	@SerializedName("id")
 	private final String tweetId;
+
+	@SerializedName("created_at")
 	private final String createdAt;
 
 	public class User {
@@ -40,22 +50,31 @@ public class TwitterDTO {
 	}
 
 	public class Place {
-		private double[] longLat;
-		private double[] latLong;
+
+		@SerializedName("geo_point")
+		private double[] geoPoint;
+
+		private String city;
+
 		private String country;
+
+		@SerializedName("country_code")
 		private String countryCode;
 
 		public Place(GeoLocation loc, twitter4j.Place place) {
 
 			if (loc != null) {
-				latLong = new double[] { loc.getLatitude(), loc.getLongitude() };
-				longLat = new double[] { loc.getLongitude(), loc.getLatitude() };
+				geoPoint = new double[] { loc.getLongitude(), loc.getLatitude() };
 			}
-
 			if (place != null) {
+				this.city = place.getName();
 				this.country = place.getCountry();
 				this.countryCode = place.getCountryCode().toUpperCase();
 			}
+		}
+
+		public String getCity() {
+			return city;
 		}
 
 		public String getCountry() {
@@ -66,22 +85,19 @@ public class TwitterDTO {
 			return countryCode;
 		}
 
-		public double[] getLongLat() {
-			return longLat;
-		}
-
-		public double[] getLatLong() {
-			return latLong;
+		public double[] getGeoPoint() {
+			return geoPoint;
 		}
 	}
 
 	public class Msg {
 		private final String text;
 		private final String lang;
+		@SerializedName("hash_tags")
 		private final List<String> hashTags;
 
 		public Msg(String txt, String lang, List<String> hashes) {
-			this.text = txt;
+			this.text = SimpleHTMLEncoder.htmlEncode(txt);
 			this.lang = lang.toUpperCase();
 			this.hashTags = hashes;
 		}
@@ -145,5 +161,9 @@ public class TwitterDTO {
 
 	public Msg getMsg() {
 		return msg;
+	}
+
+	public String toJson() {
+		return gson.toJson(this);
 	}
 }

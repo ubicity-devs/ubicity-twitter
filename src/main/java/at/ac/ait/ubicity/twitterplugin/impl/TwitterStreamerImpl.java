@@ -32,7 +32,6 @@ import twitter4j.FilterQuery;
 import twitter4j.StallWarning;
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
-import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.conf.ConfigurationBuilder;
@@ -42,6 +41,7 @@ import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
+import at.ac.ait.ubicity.twitterplugin.dto.TwitterDTO;
 
 @PluginImplementation
 public class TwitterStreamerImpl extends BrokerProducer implements
@@ -174,8 +174,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	@Override
 	public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
-		logger.warn("Got a status deletion notice id:"
-				+ statusDeletionNotice.getStatusId());
+		;
 	}
 
 	@Override
@@ -192,14 +191,21 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	public void reconnect() {
 
 		if (twitterStream != null) {
-			twitterStream.clearListeners();
 			twitterStream.cleanUp();
+
+			try {
+				java.lang.Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				;
+			}
+		} else {
+			twitterStream = new TwitterStreamFactory(configBuilder.build())
+					.getInstance();
+			twitterStream.addListener(this);
+			twitterStream.filter(filterQuery);
 		}
 
-		twitterStream = new TwitterStreamFactory(configBuilder.build())
-				.getInstance();
-		twitterStream.addListener(this);
-		twitterStream.filter(filterQuery);
+		twitterStream.sample();
 	}
 
 	@Override
@@ -210,8 +216,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	@Override
 	public void onStallWarning(StallWarning warning) {
-		logger.warn("Got a stall warnning : " + warning.toString());
-
+		;
 	}
 
 	private EventEntry createEvent(Status status) {
@@ -220,12 +225,15 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		header.put(Property.ES_TYPE, esType);
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
-		return new EventEntry(header, TwitterObjectFactory.getRawJSON(status));
+		// return new EventEntry(header,
+		// TwitterObjectFactory.getRawJSON(status));
+		return new EventEntry(header, new TwitterDTO(status).toJson());
 	}
 
 	@Override
 	@Shutdown
 	public void shutdown() {
+		twitterStream.clearListeners();
 		twitterStream.cleanUp();
 		twitterStream.shutdown();
 	}
