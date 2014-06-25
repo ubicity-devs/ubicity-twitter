@@ -18,7 +18,9 @@ package at.ac.ait.ubicity.twitterplugin.impl;
  along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
 
  */
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
@@ -29,6 +31,7 @@ import net.xeoh.plugins.base.annotations.events.Shutdown;
 import org.apache.log4j.Logger;
 
 import twitter4j.FilterQuery;
+import twitter4j.Place;
 import twitter4j.StallWarning;
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
@@ -40,8 +43,8 @@ import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
+import at.ac.ait.ubicity.contracts.twitter.TwitterDTO;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
-import at.ac.ait.ubicity.twitterplugin.dto.TwitterDTO;
 
 @PluginImplementation
 public class TwitterStreamerImpl extends BrokerProducer implements
@@ -225,9 +228,34 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		header.put(Property.ES_TYPE, esType);
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
+		TwitterDTO dto = new TwitterDTO(String.valueOf(status.getId()),
+				status.getCreatedAt(), status.getUser().getName());
+
+		dto.setMessage(status.getText(), status.getLang(),
+				calcHashTags(status.getHashtagEntities()));
+
+		if (status.getPlace() != null) {
+			Place pl = status.getPlace();
+			dto.setPlace(status.getGeoLocation().getLongitude(), status
+					.getGeoLocation().getLatitude(), pl.getCountry(), pl
+					.getCountryCode(), pl.getName());
+		}
 		// return new EventEntry(header,
 		// TwitterObjectFactory.getRawJSON(status));
-		return new EventEntry(header, new TwitterDTO(status).toJson());
+		return new EventEntry(header, dto.toJson());
+	}
+
+	private List<String> calcHashTags(twitter4j.HashtagEntity[] entities) {
+
+		List<String> hashes = new ArrayList<String>();
+
+		if (entities != null) {
+			for (int i = 0; i < entities.length; i++) {
+				hashes.add(entities[i].getText());
+			}
+		}
+
+		return hashes;
 	}
 
 	@Override
