@@ -195,20 +195,18 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 		if (twitterStream != null) {
 			twitterStream.cleanUp();
-
 			try {
-				java.lang.Thread.sleep(1000);
+				java.lang.Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				;
 			}
-		} else {
-			twitterStream = new TwitterStreamFactory(configBuilder.build())
-					.getInstance();
-			twitterStream.addListener(this);
-			twitterStream.filter(filterQuery);
 		}
 
-		twitterStream.sample();
+		twitterStream = new TwitterStreamFactory(configBuilder.build())
+				.getInstance();
+		twitterStream.addListener(this);
+		twitterStream.filter(filterQuery);
+		logger.info("(Re-) Connected to twitter stream");
 	}
 
 	@Override
