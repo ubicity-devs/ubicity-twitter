@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import net.xeoh.plugins.base.annotations.Thread;
 import net.xeoh.plugins.base.annotations.events.Init;
 import net.xeoh.plugins.base.annotations.events.Shutdown;
 
@@ -71,11 +72,6 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		setOAuthSettings(config);
 		setFilterSettings(config);
 
-		twitterStream = new TwitterStreamFactory(configBuilder.build())
-				.getInstance();
-		twitterStream.addListener(this);
-		twitterStream.filter(filterQuery);
-
 		logger.info(name + " loaded");
 	}
 
@@ -109,7 +105,9 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 				.getString("plugin.twitter.oauth_access_token"));
 		configBuilder.setOAuthAccessTokenSecret(config
 				.getString("plugin.twitter.oauth_access_token_secret"));
-		configBuilder.setJSONStoreEnabled(true);
+
+		configBuilder.setHttpRetryCount(10);
+		configBuilder.setGZIPEnabled(true);
 	}
 
 	/**
@@ -163,6 +161,14 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		return name;
 	}
 
+	@Thread
+	public void run() {
+		twitterStream = new TwitterStreamFactory(configBuilder.build())
+				.getInstance();
+		twitterStream.addListener(this);
+		twitterStream.filter(filterQuery);
+	}
+
 	@Override
 	public void onStatus(Status status) {
 
@@ -188,22 +194,6 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	@Override
 	public void onException(Exception ex) {
 		logger.warn("Got an unspecified exception: ", ex);
-		connect(true);
-	}
-
-	private void connect(boolean reconnect) {
-
-		if (reconnect && twitterStream != null) {
-			twitterStream.cleanUp();
-			try {
-				java.lang.Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				;
-			}
-		}
-
-		logger.info("(Re-) Connected to twitter stream");
-		twitterStream.sample();
 	}
 
 	@Override
