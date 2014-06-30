@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.UUID;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
-import net.xeoh.plugins.base.annotations.Thread;
 import net.xeoh.plugins.base.annotations.events.Init;
 import net.xeoh.plugins.base.annotations.events.Shutdown;
 
@@ -71,6 +70,12 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		setPluginConfig(config);
 		setOAuthSettings(config);
 		setFilterSettings(config);
+
+		twitterStream = new TwitterStreamFactory(configBuilder.build())
+				.getInstance();
+		twitterStream.addListener(this);
+		twitterStream.filter(filterQuery);
+
 		logger.info(name + " loaded");
 	}
 
@@ -158,11 +163,6 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		return name;
 	}
 
-	@Thread
-	public void run() {
-		reconnect();
-	}
-
 	@Override
 	public void onStatus(Status status) {
 
@@ -188,12 +188,12 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	@Override
 	public void onException(Exception ex) {
 		logger.warn("Got an unspecified exception: ", ex);
-		reconnect();
+		connect(true);
 	}
 
-	public void reconnect() {
+	private void connect(boolean reconnect) {
 
-		if (twitterStream != null) {
+		if (reconnect && twitterStream != null) {
 			twitterStream.cleanUp();
 			try {
 				java.lang.Thread.sleep(5000);
@@ -202,11 +202,8 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 			}
 		}
 
-		twitterStream = new TwitterStreamFactory(configBuilder.build())
-				.getInstance();
-		twitterStream.addListener(this);
-		twitterStream.filter(filterQuery);
 		logger.info("(Re-) Connected to twitter stream");
+		twitterStream.sample();
 	}
 
 	@Override
