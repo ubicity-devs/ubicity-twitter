@@ -2,8 +2,10 @@ package at.ac.ait.ubicity.twitterplugin;
 
 import static org.junit.Assert.assertTrue;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import at.ac.ait.ubicity.contracts.twitter.TwitterDTO;
@@ -14,6 +16,7 @@ public class TwitterJsonTest {
 
 	private static Gson gson = new Gson();
 
+	@Ignore
 	@Test
 	public void testClassToJson() {
 
@@ -27,5 +30,13 @@ public class TwitterJsonTest {
 
 		assertTrue(rawJSON.contains("twitterUser"));
 		assertTrue(rawJSON.contains("180.0,90.0"));
+	}
+
+	@Ignore
+	@Test
+	public void testDailyIndex() {
+
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+		System.out.println(df.format(new Date()));
 	}
 }

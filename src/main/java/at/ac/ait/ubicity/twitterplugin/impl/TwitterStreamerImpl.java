@@ -18,7 +18,9 @@ package at.ac.ait.ubicity.twitterplugin.impl;
  along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
 
  */
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -53,6 +55,8 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
 	protected TwitterStream twitterStream = null;
 	private final FilterQuery filterQuery = new FilterQuery();
+
+	private static SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 
 	private String name;
 	private String esIndex;
@@ -209,7 +213,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	private EventEntry createEvent(Status status) {
 		HashMap<Property, String> header = new HashMap<Property, String>();
-		header.put(Property.ES_INDEX, this.esIndex);
+		header.put(Property.ES_INDEX, calculateDailyIndexName());
 		header.put(Property.ES_TYPE, esType);
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
@@ -225,9 +229,11 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 					.getGeoLocation().getLatitude(), pl.getCountry(), pl
 					.getCountryCode(), pl.getName());
 		}
-		// return new EventEntry(header,
-		// TwitterObjectFactory.getRawJSON(status));
 		return new EventEntry(header, dto.toJson());
+	}
+
+	private String calculateDailyIndexName() {
+		return this.esIndex + "-" + df.format(new Date());
 	}
 
 	private List<String> calcHashTags(twitter4j.HashtagEntity[] entities) {
