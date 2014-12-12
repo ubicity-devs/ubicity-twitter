@@ -218,7 +218,9 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
 		TwitterDTO dto = new TwitterDTO(String.valueOf(status.getId()),
-				status.getCreatedAt(), status.getUser().getName());
+				status.getCreatedAt(),
+				String.valueOf(status.getUser().getId()), status.getUser()
+						.getName());
 
 		dto.setMessage(status.getText(), status.getLang(),
 				calcHashTags(status.getHashtagEntities()));

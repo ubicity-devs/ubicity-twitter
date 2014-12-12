@@ -20,7 +20,8 @@ public class TwitterJsonTest {
 	@Test
 	public void testClassToJson() {
 
-		TwitterDTO dto = new TwitterDTO("twitterId", new Date(), "twitterUser");
+		TwitterDTO dto = new TwitterDTO("twitterId", new Date(), "userId",
+				"userName");
 		dto.setPlace(180, 90, "Österreich", "AT", "Vienna");
 		dto.setMessage("My Message", "DE", null);
 
@@ -28,7 +29,7 @@ public class TwitterJsonTest {
 
 		System.out.println(rawJSON);
 
-		assertTrue(rawJSON.contains("twitterUser"));
+		assertTrue(rawJSON.contains("userName"));
 		assertTrue(rawJSON.contains("180.0,90.0"));
 	}
 
