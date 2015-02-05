@@ -33,12 +33,14 @@ import net.xeoh.plugins.base.annotations.events.Shutdown;
 import org.apache.log4j.Logger;
 
 import twitter4j.FilterQuery;
+import twitter4j.HashtagEntity;
 import twitter4j.Place;
 import twitter4j.StallWarning;
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
+import twitter4j.UserMentionEntity;
 import twitter4j.conf.ConfigurationBuilder;
 import at.ac.ait.ubicity.commons.broker.BrokerProducer;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
@@ -46,6 +48,7 @@ import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.contracts.twitter.TwitterDTO;
+import at.ac.ait.ubicity.contracts.twitter.TwitterUserDTO;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
 
 @PluginImplementation
@@ -180,7 +183,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 			try {
 				publish(createEvent(status));
 			} catch (UbicityBrokerException e) {
-				logger.error("UbicityBroker threw exc." + e.getBrokerMessage());
+				logger.error("UbicityBroker threw exc: " + e.getBrokerMessage());
 			}
 		}
 	}
@@ -192,7 +195,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	@Override
 	public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-		logger.warn("Got track limitation notice:" + numberOfLimitedStatuses);
+		logger.warn("Got track limitation notice: " + numberOfLimitedStatuses);
 	}
 
 	@Override
@@ -218,19 +221,26 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
 		TwitterDTO dto = new TwitterDTO(String.valueOf(status.getId()),
-				status.getCreatedAt(),
-				String.valueOf(status.getUser().getId()), status.getUser()
-						.getName());
+				status.getCreatedAt());
+
+		dto.setUser(String.valueOf(status.getUser().getId()), status.getUser()
+				.getName(), status.getUser().getScreenName());
 
 		dto.setMessage(status.getText(), status.getLang(),
-				calcHashTags(status.getHashtagEntities()));
+				status.isRetweeted(), status.getRetweetCount(),
+				calcHashTags(status.getHashtagEntities()),
+				calcMentionedUsers(status.getUserMentionEntities()));
 
 		if (status.getPlace() != null) {
 			Place pl = status.getPlace();
-			dto.setPlace(status.getGeoLocation().getLongitude(), status
-					.getGeoLocation().getLatitude(), pl.getCountry(), pl
-					.getCountryCode(), pl.getName());
+			dto.setPlace(pl.getCountry(), pl.getCountryCode(), pl.getName());
 		}
+
+		if (status.getGeoLocation() != null) {
+			dto.setGeo(status.getGeoLocation().getLongitude(), status
+					.getGeoLocation().getLatitude());
+		}
+
 		return new EventEntry(header, dto.toJson());
 	}
 
@@ -243,8 +253,22 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		List<String> hashes = new ArrayList<String>();
 
 		if (entities != null) {
-			for (int i = 0; i < entities.length; i++) {
-				hashes.add(entities[i].getText());
+			for (HashtagEntity e : entities) {
+				hashes.add(e.getText());
+			}
+		}
+		return hashes;
+	}
+
+	private List<TwitterUserDTO> calcMentionedUsers(
+			UserMentionEntity[] userMentionEntities) {
+
+		List<TwitterUserDTO> hashes = new ArrayList<TwitterUserDTO>();
+
+		if (userMentionEntities != null) {
+			for (UserMentionEntity e : userMentionEntities) {
+				hashes.add(new TwitterUserDTO(String.valueOf(e.getId()), e
+						.getName(), e.getScreenName()));
 			}
 		}
 
