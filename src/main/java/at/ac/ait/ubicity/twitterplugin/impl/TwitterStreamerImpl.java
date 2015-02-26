@@ -63,6 +63,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	private String name;
 	private String esIndex;
+	private boolean dailyIndex;
 	private String esType;
 
 	private final static Logger logger = Logger
@@ -125,6 +126,8 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	private void setPluginConfig(PropertyLoader config) {
 		this.name = config.getString("plugin.twitter.name");
 		this.esIndex = config.getString("plugin.twitter.elasticsearch.index");
+		this.dailyIndex = config
+				.getBoolean("plugin.twitter.elasticsearch.daily_index");
 		this.esType = config.getString("plugin.twitter.elasticsearch.type");
 	}
 
@@ -216,7 +219,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	private EventEntry createEvent(Status status) {
 		HashMap<Property, String> header = new HashMap<Property, String>();
-		header.put(Property.ES_INDEX, calculateDailyIndexName());
+		header.put(Property.ES_INDEX, getIndex());
 		header.put(Property.ES_TYPE, esType);
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
@@ -242,6 +245,10 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		}
 
 		return new EventEntry(header, dto.toJson());
+	}
+
+	private String getIndex() {
+		return dailyIndex ? calculateDailyIndexName() : this.esIndex;
 	}
 
 	private String calculateDailyIndexName() {
