@@ -181,13 +181,10 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	@Override
 	public void onStatus(Status status) {
-
-		if (status.getGeoLocation() != null) {
-			try {
-				publish(createEvent(status));
-			} catch (UbicityBrokerException e) {
-				logger.error("UbicityBroker threw exc: " + e.getBrokerMessage());
-			}
+		try {
+			publish(createEvent(status));
+		} catch (UbicityBrokerException e) {
+			logger.error("UbicityBroker threw exc: " + e.getBrokerMessage());
 		}
 	}
 
