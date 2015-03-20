@@ -1,4 +1,4 @@
-package at.ac.ait.ubicity.twitterplugin;
+package at.ac.ait.ubicity.twitterplugin.impl;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

@@ -52,8 +52,7 @@ import at.ac.ait.ubicity.contracts.twitter.TwitterUserDTO;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
 
 @PluginImplementation
-public class TwitterStreamerImpl extends BrokerProducer implements
-		TwitterStreamer {
+public class TwitterStreamerImpl extends BrokerProducer implements TwitterStreamer {
 
 	private final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
 	protected TwitterStream twitterStream = null;
@@ -66,14 +65,12 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	private boolean dailyIndex;
 	private String esType;
 
-	private final static Logger logger = Logger
-			.getLogger(TwitterStreamerImpl.class);
+	private final static Logger logger = Logger.getLogger(TwitterStreamerImpl.class);
 
 	@Override
 	@Init
 	public void init() {
-		PropertyLoader config = new PropertyLoader(
-				TwitterStreamerImpl.class.getResource("/twitter.cfg"));
+		PropertyLoader config = new PropertyLoader(TwitterStreamerImpl.class.getResource("/twitter.cfg"));
 
 		setProducerSettings(config);
 		setPluginConfig(config);
@@ -90,8 +87,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	 */
 	private void setProducerSettings(PropertyLoader config) {
 		try {
-			super.init(config.getString("plugin.twitter.broker.user"),
-					config.getString("plugin.twitter.broker.pwd"));
+			super.init(config.getString("plugin.twitter.broker.user"), config.getString("plugin.twitter.broker.pwd"));
 			setProducer(config.getString("plugin.twitter.broker.dest"));
 
 		} catch (UbicityBrokerException e) {
@@ -105,14 +101,10 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	 * @param config
 	 */
 	private void setOAuthSettings(PropertyLoader config) {
-		configBuilder.setOAuthConsumerKey(config
-				.getString("plugin.twitter.oauth_consumer_key"));
-		configBuilder.setOAuthConsumerSecret(config
-				.getString("plugin.twitter.oauth_consumer_secret"));
-		configBuilder.setOAuthAccessToken(config
-				.getString("plugin.twitter.oauth_access_token"));
-		configBuilder.setOAuthAccessTokenSecret(config
-				.getString("plugin.twitter.oauth_access_token_secret"));
+		configBuilder.setOAuthConsumerKey(config.getString("plugin.twitter.oauth_consumer_key"));
+		configBuilder.setOAuthConsumerSecret(config.getString("plugin.twitter.oauth_consumer_secret"));
+		configBuilder.setOAuthAccessToken(config.getString("plugin.twitter.oauth_access_token"));
+		configBuilder.setOAuthAccessTokenSecret(config.getString("plugin.twitter.oauth_access_token_secret"));
 
 		configBuilder.setHttpRetryCount(10);
 		configBuilder.setGZIPEnabled(true);
@@ -126,8 +118,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	private void setPluginConfig(PropertyLoader config) {
 		this.name = config.getString("plugin.twitter.name");
 		this.esIndex = config.getString("plugin.twitter.elasticsearch.index");
-		this.dailyIndex = config
-				.getBoolean("plugin.twitter.elasticsearch.daily_index");
+		this.dailyIndex = config.getBoolean("plugin.twitter.elasticsearch.daily_index");
 		this.esType = config.getString("plugin.twitter.elasticsearch.type");
 	}
 
@@ -137,21 +128,15 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 	 * @param config
 	 */
 	private void setFilterSettings(PropertyLoader config) {
-		String[] minCoordinate = config
-				.getStringArray("plugin.twitter.filter.coord_min");
-		String[] maxCoordinate = config
-				.getStringArray("plugin.twitter.filter.coord_max");
+		String[] minCoordinate = config.getStringArray("plugin.twitter.filter.coord_min");
+		String[] maxCoordinate = config.getStringArray("plugin.twitter.filter.coord_max");
 
 		String[] track = config.getStringArray("plugin.twitter.filter.track");
-		String[] language = config
-				.getStringArray("plugin.twitter.filter.language");
+		String[] language = config.getStringArray("plugin.twitter.filter.language");
 
 		if (minCoordinate.length == 2 && maxCoordinate.length == 2) {
-			double[][] locations = {
-					{ Double.parseDouble(minCoordinate[0]),
-							Double.parseDouble(minCoordinate[1]) },
-					{ Double.parseDouble(maxCoordinate[0]),
-							Double.parseDouble(maxCoordinate[1]) } };
+			double[][] locations = { { Double.parseDouble(minCoordinate[0]), Double.parseDouble(minCoordinate[1]) },
+					{ Double.parseDouble(maxCoordinate[0]), Double.parseDouble(maxCoordinate[1]) } };
 			filterQuery.locations(locations);
 		} else {
 			logger.info("Location filter ignored due to non existing coordinates.");
@@ -173,8 +158,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	@Thread
 	public void run() {
-		twitterStream = new TwitterStreamFactory(configBuilder.build())
-				.getInstance();
+		twitterStream = new TwitterStreamFactory(configBuilder.build()).getInstance();
 		twitterStream.addListener(this);
 		twitterStream.filter(filterQuery);
 	}
@@ -205,8 +189,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 
 	@Override
 	public void onScrubGeo(long userId, long upToStatusId) {
-		logger.warn("Got scrub_geo event userId:" + userId + " upToStatusId:"
-				+ upToStatusId);
+		logger.warn("Got scrub_geo event userId:" + userId + " upToStatusId:" + upToStatusId);
 	}
 
 	@Override
@@ -220,15 +203,11 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		header.put(Property.ES_TYPE, esType);
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
-		TwitterDTO dto = new TwitterDTO(String.valueOf(status.getId()),
-				status.getCreatedAt());
+		TwitterDTO dto = new TwitterDTO(String.valueOf(status.getId()), status.getCreatedAt());
 
-		dto.setUser(String.valueOf(status.getUser().getId()), status.getUser()
-				.getName(), status.getUser().getScreenName());
+		dto.setUser(String.valueOf(status.getUser().getId()), status.getUser().getName(), status.getUser().getScreenName());
 
-		dto.setMessage(status.getText(), status.getLang(),
-				status.isRetweeted(), status.getRetweetCount(),
-				calcHashTags(status.getHashtagEntities()),
+		dto.setMessage(status.getText(), status.getLang(), status.isRetweeted(), status.getRetweetCount(), calcHashTags(status.getHashtagEntities()),
 				calcMentionedUsers(status.getUserMentionEntities()));
 
 		if (status.getPlace() != null) {
@@ -237,8 +216,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		}
 
 		if (status.getGeoLocation() != null) {
-			dto.setGeo(status.getGeoLocation().getLongitude(), status
-					.getGeoLocation().getLatitude());
+			dto.setGeo(status.getGeoLocation().getLongitude(), status.getGeoLocation().getLatitude());
 		}
 
 		return new EventEntry(header, dto.toJson());
@@ -264,15 +242,13 @@ public class TwitterStreamerImpl extends BrokerProducer implements
 		return hashes;
 	}
 
-	private List<TwitterUserDTO> calcMentionedUsers(
-			UserMentionEntity[] userMentionEntities) {
+	private List<TwitterUserDTO> calcMentionedUsers(UserMentionEntity[] userMentionEntities) {
 
 		List<TwitterUserDTO> hashes = new ArrayList<TwitterUserDTO>();
 
 		if (userMentionEntities != null) {
 			for (UserMentionEntity e : userMentionEntities) {
-				hashes.add(new TwitterUserDTO(String.valueOf(e.getId()), e
-						.getName(), e.getScreenName()));
+				hashes.add(new TwitterUserDTO(String.valueOf(e.getId()), e.getName(), e.getScreenName()));
 			}
 		}
 
