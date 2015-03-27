@@ -47,9 +47,9 @@ import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
-import at.ac.ait.ubicity.contracts.twitter.TwitterDTO;
-import at.ac.ait.ubicity.contracts.twitter.TwitterUserDTO;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
+import at.ac.ait.ubicity.twitterplugin.dto.TwitterDTO;
+import at.ac.ait.ubicity.twitterplugin.dto.TwitterUserDTO;
 
 @PluginImplementation
 public class TwitterStreamerImpl extends BrokerProducer implements TwitterStreamer {

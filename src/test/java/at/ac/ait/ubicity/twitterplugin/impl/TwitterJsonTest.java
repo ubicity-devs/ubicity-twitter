@@ -6,15 +6,17 @@ import java.util.Date;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.google.gson.Gson;
+import at.ac.ait.ubicity.twitterplugin.dto.TwitterDTO;
 
 public class TwitterJsonTest {
-
-	private static Gson gson = new Gson();
 
 	@Ignore
 	@Test
 	public void testClassToJson() {
+
+		TwitterDTO dto = new TwitterDTO("123", new Date());
+
+		System.out.println(dto.toJson());
 
 	}
 
