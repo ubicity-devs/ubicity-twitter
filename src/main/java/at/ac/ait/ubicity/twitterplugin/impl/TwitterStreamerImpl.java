@@ -20,6 +20,7 @@ package at.ac.ait.ubicity.twitterplugin.impl;
  */
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -137,16 +138,20 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 		if (minCoordinate.length == 2 && maxCoordinate.length == 2) {
 			double[][] locations = { { Double.parseDouble(minCoordinate[0]), Double.parseDouble(minCoordinate[1]) },
 					{ Double.parseDouble(maxCoordinate[0]), Double.parseDouble(maxCoordinate[1]) } };
+
+			logger.info("Location filter: " + Arrays.toString(locations[0]) + " - " + Arrays.toString(locations[1]));
 			filterQuery.locations(locations);
-		} else {
-			logger.info("Location filter ignored due to non existing coordinates.");
 		}
 
 		if (track[0].length() != 0) {
+
+			logger.info("Track filter: " + Arrays.toString(track));
 			filterQuery.track(track);
 		}
 
 		if (language[0].length() != 0) {
+
+			logger.info("Language filter: " + Arrays.toString(language));
 			filterQuery.language(language);
 		}
 	}
