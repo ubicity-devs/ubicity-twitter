@@ -9,10 +9,6 @@ import at.ac.ait.ubicity.commons.templates.AbstractDTO;
 
 import com.google.gson.annotations.SerializedName;
 
-/**
- * @author ruggenthalerc
- *
- */
 public class TwitterMsgDTO extends AbstractDTO {
 
 	private final String text;

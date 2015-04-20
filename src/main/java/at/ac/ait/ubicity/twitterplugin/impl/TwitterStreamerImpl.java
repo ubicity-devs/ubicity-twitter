@@ -46,7 +46,7 @@ import twitter4j.conf.ConfigurationBuilder;
 import at.ac.ait.ubicity.commons.broker.BrokerProducer;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
-import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
+import at.ac.ait.ubicity.commons.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
 import at.ac.ait.ubicity.twitterplugin.dto.TwitterDTO;
@@ -63,6 +63,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 
 	private String name;
 	private String esIndex;
+	private String pluginDest;
 	private boolean dailyIndex;
 	private String esType;
 
@@ -89,7 +90,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 	private void setProducerSettings(PropertyLoader config) {
 		try {
 			super.init(config.getString("plugin.twitter.broker.user"), config.getString("plugin.twitter.broker.pwd"));
-			setProducer(config.getString("plugin.twitter.broker.dest"));
+			pluginDest = config.getString("plugin.twitter.broker.dest");
 
 		} catch (UbicityBrokerException e) {
 			logger.error("During init caught exc.", e);
@@ -204,6 +205,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 
 	private EventEntry createEvent(Status status) {
 		HashMap<Property, String> header = new HashMap<Property, String>();
+		header.put(Property.PLUGIN_CHAIN, EventEntry.formatPluginChain(Arrays.asList(pluginDest)));
 		header.put(Property.ES_INDEX, getIndex());
 		header.put(Property.ES_TYPE, esType);
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
@@ -266,5 +268,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 		twitterStream.clearListeners();
 		twitterStream.cleanUp();
 		twitterStream.shutdown();
+
+		shutdown(pluginDest);
 	}
 }

@@ -10,10 +10,6 @@ import at.ac.ait.ubicity.commons.templates.AbstractDTO;
 
 import com.google.gson.annotations.SerializedName;
 
-/**
- * @author ruggenthalerc
- *
- */
 public class TwitterDTO extends AbstractDTO {
 
 	@SerializedName("id")
