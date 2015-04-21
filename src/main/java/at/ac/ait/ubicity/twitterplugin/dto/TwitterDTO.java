@@ -21,6 +21,7 @@ public class TwitterDTO extends AbstractDTO {
 	private TwitterUserDTO user;
 	private final TwitterPlaceDTO place = new TwitterPlaceDTO();
 	private TwitterMsgDTO msg;
+	private TwitterMetaDTO meta;
 
 	public TwitterDTO(String id, Date createdAt) {
 		this.tweetId = id;
@@ -31,11 +32,14 @@ public class TwitterDTO extends AbstractDTO {
 		this.user = new TwitterUserDTO(userId, userName, screenName);
 	}
 
-	public void setMessage(String msg, String language, Boolean isRetweeted, Integer retweetCount, List<String> hashes, List<TwitterUserDTO> mentionedUsers) {
+	public void setMessage(String msg, String language, List<String> hashes, List<TwitterUserDTO> mentionedUsers) {
 		this.msg = new TwitterMsgDTO(msg, language);
 		this.msg.setHashTags(hashes);
 		this.msg.setMentionedUsers(mentionedUsers);
-		this.msg.setMeta(isRetweeted, retweetCount);
+	}
+
+	public void setMetaData(Boolean isRetweeted, Integer retweetCount, String replyToMsg) {
+		this.meta = new TwitterMetaDTO(isRetweeted, retweetCount, replyToMsg);
 	}
 
 	public void setPlace(String country, String countryCode, String city) {
@@ -64,5 +68,9 @@ public class TwitterDTO extends AbstractDTO {
 
 	public TwitterMsgDTO getMsg() {
 		return msg;
+	}
+
+	public TwitterMetaDTO getMeta() {
+		return this.meta;
 	}
 }

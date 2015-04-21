@@ -20,12 +20,6 @@ public class TwitterMsgDTO extends AbstractDTO {
 	@SerializedName("mentioned_users")
 	private List<TwitterUserDTO> mentionedUsers;
 
-	@SerializedName("retweeted")
-	private Boolean isRetweeted;
-
-	@SerializedName("retweet_count")
-	private Integer retweetCount = 0;
-
 	public TwitterMsgDTO(String txt, String lang) {
 		this.text = txt;
 		this.lang = lang.toUpperCase();
@@ -43,11 +37,6 @@ public class TwitterMsgDTO extends AbstractDTO {
 		this.hashTags = hashTags;
 	}
 
-	public void setMeta(Boolean isRetweeted, Integer retweetCount) {
-		this.isRetweeted = isRetweeted;
-		this.retweetCount = retweetCount;
-	}
-
 	public List<String> getHashTags() {
 		return hashTags;
 	}
@@ -58,13 +47,5 @@ public class TwitterMsgDTO extends AbstractDTO {
 
 	public List<TwitterUserDTO> getMentionedUsers() {
 		return this.mentionedUsers;
-	}
-
-	public Boolean getIsRetweeted() {
-		return this.isRetweeted;
-	}
-
-	public Integer getRetweetCount() {
-		return this.retweetCount;
 	}
 }
