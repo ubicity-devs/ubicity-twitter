@@ -49,19 +49,24 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 	private boolean dailyIndex;
 	private String esType;
 
+	private boolean startStream;
+
 	private final static Logger logger = Logger.getLogger(TwitterStreamerImpl.class);
 
 	@Override
 	@Init
 	public void init() {
 		PropertyLoader config = new PropertyLoader(TwitterStreamerImpl.class.getResource("/twitter.cfg"));
+		startStream = config.getBoolean("plugin.twitter.search");
 
-		setProducerSettings(config);
-		setPluginConfig(config);
-		setOAuthSettings(config);
-		setFilterSettings(config);
+		if (startStream) {
+			setProducerSettings(config);
+			setPluginConfig(config);
+			setOAuthSettings(config);
+			setFilterSettings(config);
 
-		logger.info(name + " loaded");
+			logger.info(name + " loaded");
+		}
 	}
 
 	/**
@@ -146,9 +151,11 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 
 	@Thread
 	public void run() {
-		twitterStream = new TwitterStreamFactory(configBuilder.build()).getInstance();
-		twitterStream.addListener(this);
-		twitterStream.filter(filterQuery);
+		if (startStream) {
+			twitterStream = new TwitterStreamFactory(configBuilder.build()).getInstance();
+			twitterStream.addListener(this);
+			twitterStream.filter(filterQuery);
+		}
 	}
 
 	@Override
@@ -245,10 +252,12 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 	@Override
 	@Shutdown
 	public void shutdown() {
-		twitterStream.clearListeners();
-		twitterStream.cleanUp();
-		twitterStream.shutdown();
+		if (startStream) {
+			twitterStream.clearListeners();
+			twitterStream.cleanUp();
+			twitterStream.shutdown();
 
-		shutdown(pluginDest);
+			shutdown(pluginDest);
+		}
 	}
 }

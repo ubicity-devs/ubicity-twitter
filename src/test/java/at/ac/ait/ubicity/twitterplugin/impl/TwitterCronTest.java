@@ -5,7 +5,7 @@ import org.junit.Test;
 
 public class TwitterCronTest {
 
-	private static TwitterPostTask pt = new TwitterPostTask();
+	private static TwitterPostTaskUs pt = new TwitterPostTaskUs();
 
 	@Test
 	@Ignore
@@ -16,6 +16,6 @@ public class TwitterCronTest {
 	@Test
 	@Ignore
 	public void testRandomMsg() {
-		System.out.println(pt.generateRandomText());
+		System.out.println(pt.generateRandomText("#hashtag"));
 	}
 }

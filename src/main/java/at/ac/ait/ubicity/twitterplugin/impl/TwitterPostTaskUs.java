@@ -1,20 +1,3 @@
-/**
-    Copyright (C) 2014  AIT / Austrian Institute of Technology
-    http://www.ait.ac.at
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
- */
 package at.ac.ait.ubicity.twitterplugin.impl;
 
 import java.util.Random;
@@ -31,13 +14,13 @@ import twitter4j.TwitterFactory;
 import twitter4j.conf.ConfigurationBuilder;
 import at.ac.ait.ubicity.commons.cron.AbstractTask;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
-import at.ac.ait.ubicity.twitterplugin.TwitterCronPlugin;
 
-public class TwitterPostTask extends AbstractTask {
+public class TwitterPostTaskUs extends AbstractTask {
 
-	private static final Logger logger = Logger.getLogger(TwitterPostTask.class);
+	private static final Logger logger = Logger.getLogger(TwitterPostTaskUs.class);
 
-	private static final PropertyLoader config = new PropertyLoader(TwitterCronPlugin.class.getResource("/twitter.cfg"));
+	private static final PropertyLoader config = new PropertyLoader(TwitterPostTaskUs.class.getResource("/twitter.cfg"));
+
 	private static final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
 	private static Twitter twitterInstance = null;
 	private static final DataFactory df = new DataFactory();
@@ -53,6 +36,10 @@ public class TwitterPostTask extends AbstractTask {
 			configBuilder.setHttpRetryCount(10);
 			configBuilder.setGZIPEnabled(true);
 
+			// Use US Proxy for updates
+			// configBuilder.setHttpProxyHost("216.57.160.3");
+			// configBuilder.setHttpProxyPort(80);
+
 			twitterInstance = new TwitterFactory(configBuilder.build()).getInstance();
 		}
 
@@ -62,15 +49,17 @@ public class TwitterPostTask extends AbstractTask {
 	@Override
 	public void executeTask() {
 
-		final double LONGITUDE = 16.489036;
-		final double LATITUDE = 48.030589;
+		// North Dakota, USA
+		final double LONGITUDE = -100.389502;
+		final double LATITUDE = 48.289490;
 
 		try {
-			StatusUpdate su = new StatusUpdate(generateRandomText());
+			StatusUpdate su = new StatusUpdate(generateRandomText("#us_test"));
 			su.setLocation(new GeoLocation(LATITUDE, LONGITUDE));
+			su.setDisplayCoordinates(true);
 
 			Status status = getTwitterInstance().updateStatus(su);
-			logger.info("Updated Twitter status to [" + status.getText() + "] @ " + LATITUDE + "," + LONGITUDE);
+			logger.info("Updated Twitter status to [" + status.getText() + "] @ " + LATITUDE + ", " + LONGITUDE);
 		} catch (TwitterException e) {
 			logger.error("Twitter post threw error: ", e);
 		}
@@ -81,7 +70,7 @@ public class TwitterPostTask extends AbstractTask {
 	 * 
 	 * @return
 	 */
-	String generateRandomText() {
+	String generateRandomText(String hashTag) {
 		Integer lastId = (Integer) getProperty("lastId");
 		String txt = "";
 
@@ -99,7 +88,7 @@ public class TwitterPostTask extends AbstractTask {
 			df.getBusinessName();
 		}
 
-		txt = df.getFirstName() + " " + df.getRandomWord() + " " + df.getBusinessName() + " #" + (lastId + 1);
+		txt = df.getFirstName() + " " + df.getRandomWord() + " " + df.getBusinessName() + " " + hashTag + " #No" + (lastId + 1);
 
 		setProperty("lastId", lastId + 1);
 		return txt;
