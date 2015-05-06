@@ -37,7 +37,7 @@ public class TwitterPostTask extends AbstractTask {
 
 	private static final Logger logger = Logger.getLogger(TwitterPostTask.class);
 
-	private static final PropertyLoader config = new PropertyLoader(TwitterCronPlugin.class.getResource("/twitter_post.cfg"));
+	private static final PropertyLoader config = new PropertyLoader(TwitterCronPlugin.class.getResource("/twitter.cfg"));
 	private static final ConfigurationBuilder configBuilder = new ConfigurationBuilder();
 	private static Twitter twitterInstance = null;
 	private static final DataFactory df = new DataFactory();
