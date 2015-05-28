@@ -11,15 +11,15 @@ public class TwitterMetaDTO extends AbstractDTO {
 	@SerializedName("retweeted")
 	private final Boolean isRetweeted;
 
-	@SerializedName("retweet_count")
-	private Integer retweetCount = 0;
+	@SerializedName("retweet_origin")
+	private final String retweetOrigin;
 
 	@SerializedName("reply_to_msg")
 	private final String replyToMsg;
 
-	public TwitterMetaDTO(Boolean isRetweeted, Integer retweetCount, String replyToMsg) {
+	public TwitterMetaDTO(Boolean isRetweeted, String retweetOrigin, String replyToMsg) {
 		this.isRetweeted = isRetweeted;
-		this.retweetCount = retweetCount;
+		this.retweetOrigin = retweetOrigin;
 		this.replyToMsg = replyToMsg;
 	}
 
@@ -27,8 +27,8 @@ public class TwitterMetaDTO extends AbstractDTO {
 		return this.isRetweeted;
 	}
 
-	public Integer getRetweetCount() {
-		return this.retweetCount;
+	public String getRetweetOrigint() {
+		return this.retweetOrigin;
 	}
 
 	public String getReplyToMsg() {

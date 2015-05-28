@@ -38,8 +38,8 @@ public class TwitterDTO extends AbstractDTO {
 		this.msg.setMentionedUsers(mentionedUsers);
 	}
 
-	public void setMetaData(Boolean isRetweeted, Integer retweetCount, String replyToMsg) {
-		this.meta = new TwitterMetaDTO(isRetweeted, retweetCount, replyToMsg);
+	public void setMetaData(Boolean isRetweeted, String retweetOrigin, String replyToMsg) {
+		this.meta = new TwitterMetaDTO(isRetweeted, retweetOrigin, replyToMsg);
 	}
 
 	public void setPlace(String country, String countryCode, String city) {

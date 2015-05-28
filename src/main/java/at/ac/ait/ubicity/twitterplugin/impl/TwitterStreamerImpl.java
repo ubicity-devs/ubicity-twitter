@@ -204,7 +204,9 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 		dto.setMessage(status.getText(), status.getLang(), calcHashTags(status.getHashtagEntities()), calcMentionedUsers(status.getUserMentionEntities()));
 
 		String replyTo = status.getInReplyToStatusId() > 0 ? String.valueOf(status.getInReplyToStatusId()) : null;
-		dto.setMetaData(status.isRetweeted(), status.getRetweetCount(), replyTo);
+		boolean retweeted = status.getRetweetedStatus() != null;
+		String retweetOrigin = retweeted ? String.valueOf(status.getRetweetedStatus().getId()) : null;
+		dto.setMetaData(retweeted, retweetOrigin, replyTo);
 
 		if (status.getPlace() != null) {
 			Place pl = status.getPlace();
