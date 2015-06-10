@@ -23,6 +23,7 @@ import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
+import twitter4j.User;
 import twitter4j.UserMentionEntity;
 import twitter4j.conf.ConfigurationBuilder;
 import at.ac.ait.ubicity.commons.broker.BrokerProducer;
@@ -200,7 +201,9 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
 		TwitterDTO dto = new TwitterDTO(String.valueOf(status.getId()), status.getCreatedAt());
-		dto.setUser(String.valueOf(status.getUser().getId()), status.getUser().getName(), status.getUser().getScreenName());
+		User usr = status.getUser();
+		dto.setUser(String.valueOf(usr.getId()), usr.getName(), usr.getScreenName(), usr.getLocation(), usr.getLang(), usr.getFollowersCount(),
+				usr.getFriendsCount());
 		dto.setMessage(status.getText(), status.getLang(), calcHashTags(status.getHashtagEntities()), calcMentionedUsers(status.getUserMentionEntities()));
 
 		String replyTo = status.getInReplyToStatusId() > 0 ? String.valueOf(status.getInReplyToStatusId()) : null;

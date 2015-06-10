@@ -28,8 +28,9 @@ public class TwitterDTO extends AbstractDTO {
 		this.createdAt = dateAsString(createdAt);
 	}
 
-	public void setUser(String userId, String userName, String screenName) {
-		this.user = new TwitterUserDTO(userId, userName, screenName);
+	public void setUser(String userId, String userName, String screenName, String location, String userLang, Integer followerCount, Integer friendsCount) {
+		this.user = new TwitterUserDTO(userId, userName, screenName, location, userLang);
+		user.setStats(followerCount, friendsCount);
 	}
 
 	public void setMessage(String msg, String language, List<String> hashes, List<TwitterUserDTO> mentionedUsers) {
