@@ -37,8 +37,8 @@ public class TwitterPostTaskUs extends AbstractTask {
 			configBuilder.setGZIPEnabled(true);
 
 			// Use US Proxy for updates
-			configBuilder.setHttpProxyHost("12.201.109.22");
-			configBuilder.setHttpProxyPort(8080);
+			configBuilder.setHttpProxyHost("23.23.87.16");
+			configBuilder.setHttpProxyPort(80);
 
 			twitterInstance = new TwitterFactory(configBuilder.build()).getInstance();
 		}
