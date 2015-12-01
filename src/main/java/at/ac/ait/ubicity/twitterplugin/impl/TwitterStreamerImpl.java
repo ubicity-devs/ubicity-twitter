@@ -1,9 +1,7 @@
 package at.ac.ait.ubicity.twitterplugin.impl;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -30,6 +28,7 @@ import at.ac.ait.ubicity.commons.broker.BrokerProducer;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.exceptions.UbicityBrokerException;
+import at.ac.ait.ubicity.commons.util.ESIndexCreator;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.twitterplugin.TwitterStreamer;
 import at.ac.ait.ubicity.twitterplugin.dto.TwitterDTO;
@@ -42,13 +41,10 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 	protected TwitterStream twitterStream = null;
 	private final FilterQuery filterQuery = new FilterQuery();
 
-	private final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+	private ESIndexCreator ic;
 
 	private String name;
-	private String esIndex;
 	private String pluginDest;
-	private boolean dailyIndex;
-	private String esType;
 
 	private boolean startStream;
 
@@ -77,7 +73,7 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 	 */
 	private void setProducerSettings(PropertyLoader config) {
 		try {
-			super.init(config.getString("plugin.twitter.broker.user"), config.getString("plugin.twitter.broker.pwd"));
+			super.init();
 			pluginDest = config.getString("plugin.twitter.broker.dest");
 
 		} catch (UbicityBrokerException e) {
@@ -107,9 +103,9 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 	 */
 	private void setPluginConfig(PropertyLoader config) {
 		this.name = config.getString("plugin.twitter.name");
-		this.esIndex = config.getString("plugin.twitter.elasticsearch.index");
-		this.dailyIndex = config.getBoolean("plugin.twitter.elasticsearch.daily_index");
-		this.esType = config.getString("plugin.twitter.elasticsearch.type");
+
+		ic = new ESIndexCreator(config.getString("plugin.twitter.elasticsearch.index"), config.getString("plugin.twitter.elasticsearch.type"),
+				config.getString("plugin.twitter.elasticsearch.pattern"));
 	}
 
 	/**
@@ -196,8 +192,8 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 	private EventEntry createEvent(Status status) {
 		HashMap<Property, String> header = new HashMap<Property, String>();
 		header.put(Property.PLUGIN_CHAIN, EventEntry.formatPluginChain(Arrays.asList(pluginDest)));
-		header.put(Property.ES_INDEX, getIndex());
-		header.put(Property.ES_TYPE, esType);
+		header.put(Property.ES_INDEX, ic.getIndex());
+		header.put(Property.ES_TYPE, ic.getType());
 		header.put(Property.ID, this.name + "-" + UUID.randomUUID().toString());
 
 		TwitterDTO dto = new TwitterDTO(String.valueOf(status.getId()), status.getCreatedAt());
@@ -221,14 +217,6 @@ public class TwitterStreamerImpl extends BrokerProducer implements TwitterStream
 		}
 
 		return new EventEntry(header, dto.toJson());
-	}
-
-	private String getIndex() {
-		return dailyIndex ? calculateDailyIndexName() : this.esIndex;
-	}
-
-	private String calculateDailyIndexName() {
-		return this.esIndex + "-" + df.format(new Date());
 	}
 
 	private List<String> calcHashTags(twitter4j.HashtagEntity[] entities) {
